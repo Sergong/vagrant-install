@@ -1,0 +1,35 @@
+---
+- name: Install Vagrant from repo and open Firewall for NFS
+  hosts: all
+  become: true
+
+  vars:
+    fwservices:
+      - zone: FedoraWorkstation
+        services:
+          - name: nfs
+          - name: rpc-bind
+          - name: mountd
+      - zone: libvirt
+        services:
+          - name: nfs
+          - name: rpc-bind
+          - name: mountd
+
+  tasks:
+    - name: Install Vagrant
+      dnf:
+        name: vagrant
+        state: latest
+
+    - name: Open NFS firewall
+      ansible.posix.firewalld:
+        zone: "{{ item.0.zone  }}"
+        service: "{{ item.1.name }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      with_subelements:
+        - "{{ fwservices }}"
+        - services
+
